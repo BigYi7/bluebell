@@ -1,0 +1,2 @@
+{"level":"DEBUG","time":"2021-05-06T18:25:58.864+0800","caller":"liwenzhou/main.go:32","msg":"logger init success"}
+{"level":"ERROR","time":"2021-05-06T18:26:01.633+0800","caller":"mysql/mysql.go:26","msg":"connect db failed err: %s:err\n","error":"dial tcp 127.0.0.1:13306: connectex: No connection could be made because the target machine actively refused it."}
