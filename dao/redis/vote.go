@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/go-redis/redis"
 	"math"
+	"strconv"
 	"time"
 )
 
@@ -14,6 +15,7 @@ const (
 
 var (
 	ErrVoteTimeExpire = errors.New("超出投票时间")
+	ErrVoteRepested   = errors.New("不允许重复投票")
 )
 
 func VoteForPost(userID, postID string, value float64) (err error) {
@@ -28,6 +30,10 @@ func VoteForPost(userID, postID string, value float64) (err error) {
 	//2.更新帖子的分数
 	//先查当前用户给当前帖子的之前的投票记录
 	ov := client.ZScore(getRedisKey(KeyPostVoteZSetPF+postID), userID).Val()
+	//如果这一次和之前保存的一直，就不允许投票
+	if value == ov {
+		return ErrVoteRepested
+	}
 	var op float64 //现在的值大于以前的值，分数就是+
 	if value > ov {
 		op = 1
@@ -50,7 +56,7 @@ func VoteForPost(userID, postID string, value float64) (err error) {
 
 }
 
-func CreatePost(postID int64) (err error) {
+func CreatePost(postID, communityID int64) (err error) {
 
 	pipeline := client.TxPipeline()
 
@@ -65,6 +71,9 @@ func CreatePost(postID int64) (err error) {
 		Member: postID,
 	})
 
+	//把帖子ID加到社区的set
+	cKey := getRedisKey(KeyCommunitySetPF + strconv.Itoa(int(communityID)))
+	pipeline.SAdd(cKey, postID)
 	_, err = pipeline.Exec()
 	return err
 }
